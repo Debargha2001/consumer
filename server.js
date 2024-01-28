@@ -118,10 +118,6 @@ server.listen(PORT, (err) => {
   console.log(`server running on port ${PORT}`);
 });
 
-// pollMessages().then(resp => {
-//   console.log(resp);
-// }).catch(err => {
-//   console.error(err)
-// })
+// pollMessages()
 
 setInterval(pollMessages, 10000);
