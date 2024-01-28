@@ -1,12 +1,30 @@
 const express = require("express");
+const http = require("http");
+const {Server} = require("socket.io")
 const excel = require("exceljs")
 const {
   SQSClient,
   GetQueueUrlCommand,
   ReceiveMessageCommand,
+  DeleteMessageCommand
 } = require("@aws-sdk/client-sqs");
 
 const app = express();
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  serveClient: false,
+  cors: {
+    origin: "*"
+  },
+});
+
+io.on("connection", (socket) => {
+  console.log("connected to socket client");
+  socket.on("disconnect", () => {
+    console.log("socket client disconnected");
+  });
+});
 
 const client = new SQSClient({
   region: "ap-south-1",
@@ -49,7 +67,7 @@ async function processFileData(data) {
         const convertedData = sheet.getSheetValues();
         result[`sheet_${sheetId}`] = transformData(convertedData)
       });
-      console.log(result)
+      return result;
 }
 
 async function pollMessages() {
@@ -65,9 +83,23 @@ async function pollMessages() {
       });
       const {Messages} = await client.send(recieveMessagCommand);
       if(Messages && Messages.length > 0){
-        const {Body} = Messages[0];
+        const {Body, ReceiptHandle} = Messages[0];
         const fileData = Buffer.from(JSON.parse(Body).fileData, "base64")
-        await processFileData(fileData)
+        const result = await processFileData(fileData);
+        const deleteMessageCommand = new DeleteMessageCommand({QueueUrl,ReceiptHandle});
+        await client.send(deleteMessageCommand);
+        return new Promise((resolve) => {
+          io.timeout(10000).emit('parse:excel', result, (err, resp) => {
+            if (err) {
+              return resolve({
+                error: true,
+                message: err?.message ?? 'something went wrong'
+              });
+            }
+    
+            return resolve(resp[0] ?? resp);
+          });
+        })
       }
       
     }
@@ -77,7 +109,7 @@ async function pollMessages() {
 }
 
 const PORT = 5000;
-app.listen(PORT, (err) => {
+server.listen(PORT, (err) => {
   if (err) {
     console.log(err);
   }
