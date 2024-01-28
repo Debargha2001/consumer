@@ -90,6 +90,7 @@ async function pollMessages() {
         await client.send(deleteMessageCommand);
         return new Promise((resolve) => {
           io.timeout(10000).emit('parse:excel', result, (err, resp) => {
+            console.log(result)
             if (err) {
               return resolve({
                 error: true,
