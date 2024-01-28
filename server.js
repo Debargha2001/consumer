@@ -27,7 +27,7 @@ function transformData(data) {
   
     const transformedData = dataRows.map((row) => {
       const object = {};
-      for (let i = 0; i < headers.length; i++) {
+      for (let i = 1; i < headers.length; i++) {
         if (row && Array.isArray(row)) {  // Check for null/undefined and array type
           object[`${headers[i]}`] = row[i];
         } else {
