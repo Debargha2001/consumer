@@ -73,11 +73,12 @@ async function processFileData(data) {
 async function pollMessages() {
     console.log("listening for producer message")
   try {
-    while (true) {
+    // while (true) {
       const getQueueUrlCommand = new GetQueueUrlCommand({
         QueueName: "file-upload-test-queue",
       });
       const { QueueUrl } = await client.send(getQueueUrlCommand);
+      console.log(QueueUrl);
       const recieveMessagCommand = new ReceiveMessageCommand({
         QueueUrl: QueueUrl,
       });
@@ -89,7 +90,7 @@ async function pollMessages() {
         const deleteMessageCommand = new DeleteMessageCommand({QueueUrl,ReceiptHandle});
         await client.send(deleteMessageCommand);
         return new Promise((resolve) => {
-          io.timeout(10000).emit('parse:excel', result, (err, resp) => {
+          io.emit('parse:excel', result, (err, resp) => {
             console.log(result)
             if (err) {
               return resolve({
@@ -101,7 +102,7 @@ async function pollMessages() {
             return resolve(resp[0] ?? resp);
           });
         })
-      }
+      // }
       
     }
   } catch (err) {
@@ -117,4 +118,10 @@ server.listen(PORT, (err) => {
   console.log(`server running on port ${PORT}`);
 });
 
-pollMessages()
+// pollMessages().then(resp => {
+//   console.log(resp);
+// }).catch(err => {
+//   console.error(err)
+// })
+
+setInterval(pollMessages, 10000);
