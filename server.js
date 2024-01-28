@@ -62,10 +62,10 @@ async function processFileData(data) {
 
     const workbook = new excel.Workbook();
       await workbook.xlsx.load(data);
-      const result = {};
+      const result = [];
       workbook.eachSheet((sheet, sheetId) => {
         const convertedData = sheet.getSheetValues();
-        result[`sheet_${sheetId}`] = transformData(convertedData)
+        result.push(transformData(convertedData));
       });
       return result;
 }
