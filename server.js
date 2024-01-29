@@ -12,15 +12,20 @@ const {
 const app = express();
 
 const server = http.createServer(app);
-const io = new Server(server, {
+const ioServer = new Server(server, {
   serveClient: false,
   cors: {
     origin: "*"
   },
 });
 
-io.on("connection", (socket) => {
+
+ioServer.on("connection", (socket) => {
   console.log("connected to socket client");
+  socket.on("recieveQueueMessage", async (data) => {
+    console.log(data)
+    await pollMessages();
+  })
   socket.on("disconnect", () => {
     console.log("socket client disconnected");
   });
@@ -90,7 +95,7 @@ async function pollMessages() {
         const deleteMessageCommand = new DeleteMessageCommand({QueueUrl,ReceiptHandle});
         await client.send(deleteMessageCommand);
         return new Promise((resolve) => {
-          io.emit('parse:excel', result, (err, resp) => {
+          ioServer.emit('parse:excel', result, (err, resp) => {
             console.log(result)
             if (err) {
               return resolve({
@@ -120,4 +125,4 @@ server.listen(PORT, (err) => {
 
 // pollMessages()
 
-setInterval(pollMessages, 10000);
+// setInterval(pollMessages, 10000);
