@@ -12,7 +12,7 @@ const {
 const app = express();
 
 const server = http.createServer(app);
-const ioServer = new Server(server, {
+const io = new Server(server, {
   serveClient: false,
   cors: {
     origin: "*"
@@ -20,9 +20,9 @@ const ioServer = new Server(server, {
 });
 
 
-ioServer.on("connection", (socket) => {
+io.on("connection", (socket) => {
   console.log("connected to socket client");
-  socket.on("recieveQueueMessage", async (data) => {
+  socket.on("receiveQueueMessage", async (data) => {
     console.log(data)
     await pollMessages();
   })
@@ -86,6 +86,7 @@ async function pollMessages() {
       console.log(QueueUrl);
       const recieveMessagCommand = new ReceiveMessageCommand({
         QueueUrl: QueueUrl,
+        MaxNumberOfMessages: 1,
       });
       const {Messages} = await client.send(recieveMessagCommand);
       if(Messages && Messages.length > 0){
@@ -95,7 +96,7 @@ async function pollMessages() {
         const deleteMessageCommand = new DeleteMessageCommand({QueueUrl,ReceiptHandle});
         await client.send(deleteMessageCommand);
         return new Promise((resolve) => {
-          ioServer.emit('parse:excel', result, (err, resp) => {
+          io.emit('parse:excel', result, (err, resp) => {
             console.log(result)
             if (err) {
               return resolve({
